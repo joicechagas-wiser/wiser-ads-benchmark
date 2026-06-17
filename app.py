@@ -57,7 +57,7 @@ def buscar_meta_ads(termo_busca, meta_token=None):
     
     # Tentativa 1: conexão com a API oficial da Meta
     if meta_token and meta_token != "":
-        url = "https://graph.facebook.com/v19.0/ads_archive"
+        url = "https://graph.facebook.com/v25.0/ads_archive"
         params = {
             "search_terms": termo_busca,
             "ad_active_status": "ACTIVE",
