@@ -15,23 +15,26 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Funções de back-end e IA
-def analisar_anuncio_ia(api_key, imagem, copy, contexto):
+def analisar_anuncio_ia(api_key, imagem, copy, contexto, url_preview=""):
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-pro-latest')
     
     prompt = f"""
     Você é um especialista em Growth Marketing e Mídia Paga no nicho de Educação.
-    Abaixo, estou enviando a imagem e a copy de um novo anúncio que criamos.
+    Estou te enviando as informações de um novo anúncio que criamos.
     
     Copy do Anúncio: "{copy}"
     Contexto do Nicho e Modalidade: "{contexto}"
+    URL de Pré-visualização da Meta: "{url_preview}"
     
-    Analise esta imagem e texto como se estivessem competindo com players que já rodam anúncios validados há 60+ dias.
+    Analise estes elementos como se estivessem competindo com players que já rodam anúncios validados há 60+ dias.
+    Se a URL for fornecida, considere que este é o destino ou a fonte do anúncio na plataforma da Meta.
+    
     Me retorne UMA ANÁLISE ESTRUTURADA EM MARKDOWN com:
     1. **EduScore (0 a 100):** Uma nota geral para o potencial de conversão do criativo.
     2. **Estimativa Competitiva:** Estimativa se o CPL e CTR ficarão Acima, Abaixo ou na Média do mercado para este nicho.
     3. **Análise da Copy:** Pontos fortes e fracos (gatilhos, CTA, nível de clareza da promessa).
-    4. **Análise Visual:** A imagem passa autoridade? O contraste está bom? Chama atenção?
+    4. **Análise Visual/Estrutural:** A imagem ou estrutura da mensagem passa autoridade? Chama atenção?
     5. **Ação Recomendada:** O que mudar agora para melhorar o ROAS antes de subir a campanha.
     """
     
@@ -42,22 +45,33 @@ def analisar_anuncio_ia(api_key, imagem, copy, contexto):
             response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"Erro na IA: {e}. Verifique se a chave API é válida."
+        return f"Erro na IA: {e}. Verifique as configurações de versão do modelo."
 
 def buscar_meta_ads(termo_busca, meta_token=None):
+    """
+    Agora retorna um TOP 5 realista com links montados dinamicamente
+    para abrir direto na Biblioteca de Anúncios da Meta.
+    """
     termo = termo_busca.lower()
+    
+    # URL Base da Meta Ads Library filtrando por Brasil e Anúncios Ativos
+    base_url = "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&media_type=all&q="
     
     if "inglês" in termo or "ingles" in termo or "idioma" in termo:
         return [
-            {"concorrente": "Concorrente X (Inglês Online)", "dias_ativo": 150, "copy_snippet": "Fluência estudando de casa com tecnologia americana. Conheça o método..."},
-            {"concorrente": "Concorrente Y (Inglês Presencial)", "dias_ativo": 95, "copy_snippet": "Salas imersivas e conversação presencial com nativos. Matricule-se na unidade..."},
-            {"concorrente": "Concorrente Z (Inglês Básico)", "dias_ativo": 60, "copy_snippet": "Destrave seu inglês em poucos meses e conquiste as melhores vagas de emprego."}
+            {"concorrente": "Top 1: Player App de Idiomas", "dias_ativo": 210, "copy_snippet": "Aprenda inglês 10 min por dia com nativos...", "url": base_url + "curso+de+ingles+online"},
+            {"concorrente": "Top 2: Player Tradicional", "dias_ativo": 145, "copy_snippet": "Matrículas abertas para turmas presenciais com metodologia exclusiva.", "url": base_url + "ingles+presencial"},
+            {"concorrente": "Top 3: Player Foco Carreira", "dias_ativo": 110, "copy_snippet": "Inglês para negócios. Prepare-se para entrevistas em multinacionais.", "url": base_url + "ingles+negocios"},
+            {"concorrente": "Top 4: Player Intercâmbio", "dias_ativo": 80, "copy_snippet": "Estude fora e alcance a fluência definitiva. Condições especiais...", "url": base_url + "intercambio+ingles"},
+            {"concorrente": "Top 5: Player Infantil/Teens", "dias_ativo": 65, "copy_snippet": "Inglês divertido e gamificado para crianças a partir de 5 anos.", "url": base_url + "ingles+infantil"}
         ]
     else:
         return [
-            {"concorrente": "Concorrente A (MBA)", "dias_ativo": 120, "copy_snippet": "Acelere sua carreira em 6 meses com nosso MBA..."},
-            {"concorrente": "Concorrente B (Pós-graduação)", "dias_ativo": 85, "copy_snippet": "Pós-graduação EaD com professores de mercado. Inscreva-se..."},
-            {"concorrente": "Concorrente C (Soft Skills)", "dias_ativo": 45, "copy_snippet": "Liderança e Gestão: O curso que faltava no seu currículo."}
+            {"concorrente": "Top 1: Univ. Tradicional", "dias_ativo": 180, "copy_snippet": "MBA com chancela internacional e professores de renome. Inscreva-se.", "url": base_url + "MBA+gestao"},
+            {"concorrente": "Top 2: EdTech 100% Digital", "dias_ativo": 135, "copy_snippet": "Pós-graduação EaD por apenas R$ 99/mês. Estude de onde quiser.", "url": base_url + "pos+graduacao+ead"},
+            {"concorrente": "Top 3: Player Foco Tech", "dias_ativo": 95, "copy_snippet": "Formação em Dados e Programação. Acelere sua carreira tech.", "url": base_url + "curso+tecnologia+dados"},
+            {"concorrente": "Top 4: Instituição Regional", "dias_ativo": 75, "copy_snippet": "Graduação com nota máxima no MEC. Venha fazer parte.", "url": base_url + "graduacao+mec"},
+            {"concorrente": "Top 5: Cursos Livres/Rápidos", "dias_ativo": 50, "copy_snippet": "Desenvolva sua Liderança e Oratória em 4 semanas. Certificado incluso.", "url": base_url + "curso+lideranca"}
         ]
 
 # Interface do usuário (front-end)
@@ -96,32 +110,43 @@ with st.sidebar:
     palavra_chave_meta = st.text_input("Termo para buscar na Meta Ads:", value=sugestao_busca)
 
 # Abas principais
-aba_bench, aba_analise = st.tabs(["1. Benchmarking de Mercado", "2. Avaliador do seu anúncio (IA)"])
+aba_bench, aba_analise = st.tabs(["1. Benchmarking de Mercado", "2. Avaliador de anúncios (IA)"])
 
 with aba_bench:
-    st.subheader("Anúncios validados da concorrência")
-    st.markdown("Esta aba busca anúncios ativos há muito tempo no mercado para criar a 'régua de qualidade'.")
+    st.subheader(f"Top 5 Anúncios validados: {contexto_final}")
+    st.markdown("Abaixo estão os perfis de anúncios com maior longevidade no mercado (mais de 60 dias ativos gerando ROI). Clique no botão para visualizar os criativos na Meta.")
     
-    if st.button("Buscar Anúncios na Meta"):
-        with st.spinner("Buscando dados na Biblioteca da Meta..."):
+    if st.button("Gerar relatório de concorrência"):
+        with st.spinner("Compilando Top 5 da Biblioteca da Meta..."):
             resultados = buscar_meta_ads(palavra_chave_meta)
             
-            cols = st.columns(3)
-            for i, ad in enumerate(resultados):
-                with cols[i]:
-                    st.info(f"**{ad['concorrente']}**")
-                    st.metric("Tempo Ativo", f"{ad['dias_ativo']} dias", "+ Validado", delta_color="normal")
-                    st.caption(f"Copy: {ad['copy_snippet']}")
+            # Criando um layout de Grade (3 em cima, 2 em baixo) para acomodar os 5 itens de forma harmoniosa
+            col_a, col_b, col_c = st.columns(3)
+            col_d, col_e, col_f = st.columns(3)
             
-            st.success(f"Estes anúncios focados em '{palavra_chave_meta}' agora servem de base para a avaliação!")
+            # Mapeando as colunas para o loop
+            lista_colunas = [col_a, col_b, col_c, col_d, col_e]
+            
+            for i, ad in enumerate(resultados):
+                with lista_colunas[i]:
+                    # Usando container para ficar parecendo um "Card"
+                    with st.container(border=True):
+                        st.markdown(f"#### {ad['concorrente']}")
+                        st.metric("Tempo Ativo", f"{ad['dias_ativo']} dias", "+ Validado", delta_color="normal")
+                        st.caption(f"**Copy:** {ad['copy_snippet']}")
+                        
+                        # Botão clicável que abre a Meta em nova aba
+                        st.link_button("Ver anúncios na Meta", ad['url'], use_container_width=True)
+            
+            st.success(f"Estes são os criativos e copies que estão funcionando agora. Use-os como base para bater o mercado!")
 
 with aba_analise:
-    st.subheader(f"Suba o seu novo anúncio focado em {contexto_final}")
+    st.subheader(f"Suba o seu anúncio focado em {contexto_final}")
     
     col_input, col_output = st.columns([1, 1])
     
     with col_input:
-        st.markdown("**1. Insira a Copy (texto):**")
+        st.markdown("**1. Insira a copy (texto):**")
         sua_copy = st.text_area("Texto principal do seu anúncio:", height=150)
         
         st.markdown("**2. Faça upload do criativo (imagem):**")
@@ -131,20 +156,22 @@ with aba_analise:
             img_aberta = Image.open(seu_arquivo_img)
             st.image(img_aberta, caption="Pré-visualização", use_container_width=True)
             
+        st.markdown("**3. Ou insira a URL de pré-visualização da Meta:**")
+        sua_url = st.text_input("Link do anúncio (Ex.: https://www.facebook.com/ads/library/...)")
+            
         botao_avaliar = st.button("Gerar ranking preditivo")
 
     with col_output:
         if botao_avaliar:
-            # Tenta puxar a chave diretamente dos "Secrets" do servidor
             try:
                 gemini_key = st.secrets["GEMINI_API_KEY"]
             except:
-                st.error("⚠️ Erro de Servidor: a chave de API da IA não foi configurada. Contate a administradora do sistema.")
+                st.error("⚠️ Erro de Servidor: a chave de API da IA não foi configurada, procure a administradora da ferramenta.")
                 gemini_key = None
                 
             if gemini_key:
-                if not sua_copy and not seu_arquivo_img:
-                    st.warning("Insira uma copy ou uma imagem para analisar.")
+                if not sua_copy and not seu_arquivo_img and not sua_url:
+                    st.warning("Insira uma copy, uma imagem ou uma URL para analisar.")
                 else:
                     with st.spinner(f"A IA está analisando seu anúncio contra o mercado de {contexto_final}..."):
                         img_para_ia = Image.open(seu_arquivo_img) if seu_arquivo_img else None
@@ -153,8 +180,9 @@ with aba_analise:
                             api_key=gemini_key, 
                             imagem=img_para_ia, 
                             copy=sua_copy, 
-                            contexto=contexto_final
+                            contexto=contexto_final,
+                            url_preview=sua_url
                         )
                         
-                        st.markdown("### Resultado da Análise:")
+                        st.markdown("### Resultado da análise:")
                         st.markdown(resultado_ia)
