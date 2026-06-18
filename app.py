@@ -85,7 +85,12 @@ def buscar_meta_ads(termo_busca, meta_token=None):
             response = requests.get(url, params=params)
             data = response.json()
             
-            if "data" in data and len(data["data"]) > 0:
+            # --- RASTREADOR DE ERROS ADICIONADO AQUI ---
+            if "error" in data:
+                st.error(f"🛑 BLOQUEIO DA META: {data['error']['message']}")
+            # -------------------------------------------
+            
+            elif "data" in data and len(data["data"]) > 0:
                 resultados_reais = []
                 hoje = datetime.now()
                 
@@ -113,10 +118,14 @@ def buscar_meta_ads(termo_busca, meta_token=None):
                 resultados_reais = sorted(resultados_reais, key=lambda x: x["dias_ativo"], reverse=True)
                 return resultados_reais[:5]
                 
+            # Verifica se a Meta buscou com sucesso, mas não achou nada com aquela palavra
+            elif "data" in data and len(data["data"]) == 0:
+                 st.warning(f"A Meta não encontrou nenhum anúncio ativo no Brasil com a palavra exata '{termo_busca}' no momento.")
+                
         except Exception as e:
             st.warning(f"Aviso: Falha ao processar os dados da Meta. Usando dados de backup. Erro: {e}")
 
-    # Fallback: dados simulados (caso o token Meta não esteja configurado)
+    # Fallback: dados simulados (caso o token Meta não esteja configurado ou falhe)
     base_url = "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&media_type=all&q="
     if "inglês" in termo or "ingles" in termo or "idioma" in termo:
         return [
